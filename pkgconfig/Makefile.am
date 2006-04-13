@@ -1,4 +1,3 @@
-pkgconfigdir = ${libdir}/pkgconfig
-
-pkgconfigdir_FILES = libydpdict.pc
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libydpdict.pc
 

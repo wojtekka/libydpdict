@@ -7,5 +7,5 @@ Name: libydpdict
 Description: YDP Dictionaries support library
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lydpdict @LIBS@
-Cflags: -I${includedir}/ydpdict @CFLAGS@
+Libs: -L${libdir} -lydpdict
+Cflags: -I${includedir}/ydpdict
