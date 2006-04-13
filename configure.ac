@@ -13,6 +13,6 @@ AC_PROG_LIBTOOL
 AC_C_CONST
 AC_C_BIGENDIAN
 
-AC_CONFIG_FILES([Makefile src/Makefile pkgconfig/libydpdict.pc include/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile pkgconfig/Makefile pkgconfig/libydpdict.pc include/Makefile])
 AC_OUTPUT
 
