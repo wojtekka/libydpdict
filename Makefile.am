@@ -1,8 +1,8 @@
-SUBDIRS = includes src pkgconfig
-DIST_SUBDIRS = includes src pkgconfig misc
+SUBDIRS = include src pkgconfig
+DIST_SUBDIRS = include src pkgconfig misc
 EXTRA_DIST = autogen.sh configure.ac
 
-INCLUDES = -I$(top_srcdir)/includes
+INCLUDES = -I$(top_srcdir)/include
 
 libtool: $(LIBTOOL_DEPS)
 
