@@ -1,4 +1,3 @@
-libydpdictincludedir = ${includedir}/ydpdict
-
-libydpdictinclude_HEADERS = ydpdict.h
+libydpdict_includedir = $(includedir)/ydpdict
+libydpdict_include_HEADERS = ydpdict.h
 
