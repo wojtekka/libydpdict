@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <ctype.h>
-#include "ydpdict/ydpdict.h"
+#include "ydpdict.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
