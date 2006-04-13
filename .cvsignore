@@ -13,4 +13,5 @@ mkinstalldirs
 stamp*
 configure
 confdefs.h
+compile
 
