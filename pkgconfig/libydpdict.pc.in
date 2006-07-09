@@ -8,4 +8,4 @@ Description: YDP dictionaries support library
 Version: @VERSION@
 Requires:
 Libs: -L${libdir} -lydpdict
-Cflags: -I${includedir}/ydpdict
+Cflags: -I${includedir}
