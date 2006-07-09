@@ -1,6 +1,6 @@
 /*
  * ydpdict support library
- * (C) Copyright 1998-2005 Wojtek Kaniewski <wojtekka@toxygen.net>
+ * (C) Copyright 1998-2006 Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License Version
@@ -121,7 +121,7 @@ static inline uint16_t ydpdict_fix16(uint16_t value)
  * \param dict allocated dictionary description
  * \param dat data file path
  * \param idx index file path
- * \param encoding output encoding type
+ * \param encoding output encoding for XHTML
  * 
  * \return 0 on success, -1 on error
  */
