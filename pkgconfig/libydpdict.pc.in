@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: libydpdict
-Description: YDP Dictionaries support library
+Description: YDP dictionaries support library
 Version: @VERSION@
 Requires:
 Libs: -L${libdir} -lydpdict
