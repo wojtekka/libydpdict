@@ -21,6 +21,8 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
+		printf("%s %d słów\n", dat, dict.word_count);
+
 		for (i = 0; i < dict.word_count; i++) {
 			unsigned char *tmp;
 	
