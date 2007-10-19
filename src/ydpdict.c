@@ -466,7 +466,6 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 			case '{':
 				if (level < 16)
 					attr_stack[level++] = attr;
-				block_begin = 1;
 				attr = 0;
 				
 				rtf++;
@@ -527,29 +526,43 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				if (!strcmp(token, "line") && !paragraph)
 					APPEND("<br />");
 
-				if (!strcmp(token, "b"))
+				if (!strcmp(token, "b")) {
 					attr |= ATTR_B;
+					block_begin = 1;
+				}
 
-				if (!strcmp(token, "i"))
+				if (!strcmp(token, "i")) {
 					attr |= ATTR_I;
+					block_begin = 1;
+				}
 
-				if (!strcmp(token, "cf0"))
+				if (!strcmp(token, "cf0")) {
 					attr |= ATTR_CF0;
+					block_begin = 1;
+				}
 
-				if (!strcmp(token, "cf1"))
+				if (!strcmp(token, "cf1")) {
 					attr |= ATTR_CF1;
+					block_begin = 1;
+				}
 
-				if (!strcmp(token, "cf2"))
+				if (!strcmp(token, "cf2")) {
 					attr |= ATTR_CF2;
+					block_begin = 1;
+				}
 	
-				if (!strcmp(token, "cf5"))
+				if (!strcmp(token, "cf5")) {
 					attr |= ATTR_CF5;
+					block_begin = 1;
+				}
 
 				if (!strcmp(token, "qc"))
 					attr |= ATTR_QC;
 
-				if (!strcmp(token, "super"))
+				if (!strcmp(token, "super")) {
 					attr |= ATTR_SUPER;
+					block_begin = 1;
+				}
 
 				if (!strncmp(token, "f", 1) && strcmp(token, "f1"))
 					attr |= ATTR_F;
@@ -614,6 +627,14 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 
 					if ((attr & ATTR_SUPER))
 						APPEND("<sup>");
+				}
+
+				// workaround for square bracket like in
+				// {[\f1\cf5 pronunciation]}
+				//
+				if (*rtf == ']' && (attr & ATTR_F1) && (attr & ATTR_CF5)) {
+					attr &= ~ATTR_CF5;
+					APPEND("</span>");
 				}
 
 				if (!(attr & ATTR_QC) && (dict->encoding == YDPDICT_ENCODING_UTF8)) {
