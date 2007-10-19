@@ -13,18 +13,23 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	i = ydpdict_find(&dict, "those");
+	if (argc < 2)
+		i = 0;
+	else if (!(i = atoi(argv[1])))
+		i = ydpdict_find(&dict, argv[1]);
 
 	printf("ydpdict_find = %u\n", i);
 	
-	foo = ydpdict_read_rtf(&dict, i);
+	if (i != (uint32_t) -1) {
+		foo = ydpdict_read_rtf(&dict, i);
 
-	printf("-----\n%s\n-----\n%s\n-----\n", foo, ydpdict_read_xhtml(&dict, i));
+		printf("-----\n%s\n-----\n%s\n-----\n", foo, ydpdict_read_xhtml(&dict, i));
 
-	f = fopen("test.html", "w");
+		f = fopen("test.html", "w");
 
-	fprintf(f, "%s\n", ydpdict_read_xhtml(&dict, i));
-	fclose(f);
+		fprintf(f, "%s\n", ydpdict_read_xhtml(&dict, i));
+		fclose(f);
+	}
 
 	ydpdict_close(&dict);
 
