@@ -41,6 +41,7 @@
 #define ATTR_F1 128
 #define ATTR_I 256
 #define ATTR_CF5 1024
+#define ATTR_SA 2048
 
 /**
  * \brief Conversion table from phonetic characters to UTF-8
@@ -70,7 +71,7 @@ static char *ydpdict_windows1250_to_utf8_table[128] =
 	"Č", "É", "Ę", "Ë", "Ě", "Í", "Î", "Ď", 
 	"Đ", "Ń", "Ň", "Ó", "Ô", "Ő", "Ö", "×", 
 	"Ř", "Ů", "Ú", "Ű", "Ü", "Ý", "Ţ", "ß", 
-	"ŕ", "á", "â", "ă", "ä", "ĺ", "ć", "ç", 
+	"à", "á", "â", "ă", "ä", "ĺ", "ć", "ç", 
 	"č", "é", "ę", "ë", "ě", "í", "î", "ï", 
 	"đ", "ń", "ň", "ó", "ô", "ő", "ö", "÷", 
 	"ř", "ů", "ú", "ű", "ü", "ý", "ţ", "˙", 
@@ -402,7 +403,7 @@ static int ydpdict_append(char **buf, int *len, const char *str)
 char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 {
 	char *buf = NULL;
-	int attr_stack[16], level = 0, attr = 0, block_begin = 0;
+	int attr_stack[16], block_stack[16], level = 0, attr = 0, block_begin = 0;
 	int paragraph = 1, margin = 0, buf_len;
 	unsigned char *rtf, *rtf_orig;
 
@@ -464,9 +465,18 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 	while (*rtf) {
 		switch (*rtf) {
 			case '{':
-				if (level < 16)
-					attr_stack[level++] = attr;
+				if (level < 16) {
+					attr_stack[level] = attr;
+					block_stack[level] = block_begin;
+					level++;
+				}
+
+				block_begin = 1;
+
 				attr = 0;
+				
+				if (margin && !(attr_stack[level - 1] & ATTR_SA))
+					attr |= ATTR_SA;
 				
 				rtf++;
 				break;
@@ -475,21 +485,32 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				if (!level)
 					break;
 
-				if ((attr & ATTR_SUPER))
-					APPEND("</sup>");
+				// don't end tags if they haven't started.
+				//
+				if (!block_begin) {
+					if ((attr & ATTR_SUPER))
+						APPEND("</sup>");
 
-				if ((attr & (ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5)))
-					APPEND("</span>");
+					if ((attr & (ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5)))
+						APPEND("</span>");
 				
-				if ((attr & ATTR_I))
-					APPEND("</i>");
+					if ((attr & ATTR_I))
+						APPEND("</i>");
 
-				if ((attr & ATTR_B))
-					APPEND("</b>");
+					if ((attr & ATTR_B))
+						APPEND("</b>");
+				}
 
+				if (margin && (attr & ATTR_SA)) {
+					APPEND("</div>");
+					margin = 0;
+				}
+				
 				paragraph = 0;
 
-				attr = attr_stack[--level];
+				level--;
+				attr = attr_stack[level];
+				block_begin = block_stack[level];
 
 				rtf++;
 				break;
@@ -514,7 +535,8 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				token[len] = 0;
 
 				if (!strcmp(token, "par") && margin) {
-					APPEND("</span>");
+					APPEND("</div>");
+					attr &= ~ATTR_SA;
 					margin = 0;
 				}
 
@@ -526,34 +548,24 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				if (!strcmp(token, "line") && !paragraph)
 					APPEND("<br />");
 
-				if (!strcmp(token, "b")) {
-					attr |= ATTR_B;
-					block_begin = 1;
-				}
+				if (block_begin) {
+					if (!strcmp(token, "b"))
+						attr |= ATTR_B;
 
-				if (!strcmp(token, "i")) {
-					attr |= ATTR_I;
-					block_begin = 1;
-				}
+					if (!strcmp(token, "i"))
+						attr |= ATTR_I;
 
-				if (!strcmp(token, "cf0")) {
-					attr |= ATTR_CF0;
-					block_begin = 1;
-				}
+					if (!strcmp(token, "cf0"))
+						attr |= ATTR_CF0;
 
-				if (!strcmp(token, "cf1")) {
-					attr |= ATTR_CF1;
-					block_begin = 1;
-				}
+					if (!strcmp(token, "cf1"))
+						attr |= ATTR_CF1;
 
-				if (!strcmp(token, "cf2")) {
-					attr |= ATTR_CF2;
-					block_begin = 1;
-				}
+					if (!strcmp(token, "cf2"))
+						attr |= ATTR_CF2;
 	
-				if (!strcmp(token, "cf5")) {
-					attr |= ATTR_CF5;
-					block_begin = 1;
+					if (!strcmp(token, "cf5"))
+						attr |= ATTR_CF5;
 				}
 
 				if (!strcmp(token, "qc"))
@@ -572,7 +584,7 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 
 				if (!strncmp(token, "sa", 2)) {
 					if (!margin) {
-						APPEND("<span style=\"display: block; margin-left: 1em;\">");
+						APPEND("<div style=\"margin-left: 1em;\">");
 						margin = 1;
 					} else
 						APPEND("<br />");
@@ -582,7 +594,7 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 			}
 
 			default:
-				if (block_begin) {
+				if (block_begin && *rtf != ' ') {
 					block_begin = 0;
 
 					if ((attr & ATTR_B))
@@ -644,6 +656,12 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 						APPEND(ydpdict_windows1250_to_utf8_table[*rtf - 128]);
 					else if (*rtf == 127)
 						APPEND("~");
+					else if (*rtf == '&')
+						APPEND("&amp;");
+					else if (*rtf == '<')
+						APPEND("&lt;");
+					else if (*rtf == '>')
+						APPEND("&gt;");
 					else {
 						char tmp[2] = { *rtf, 0 };
 						APPEND(tmp);
