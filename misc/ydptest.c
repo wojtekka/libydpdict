@@ -13,6 +13,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	ydpdict_xhtml_set_title(&dict, "ydpdict");
+
 	if (argc < 2)
 		i = 0;
 	else if (!(i = atoi(argv[1])))
