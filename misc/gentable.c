@@ -2,8 +2,8 @@
  * gentable.c
  *
  * Generates windows-1250 to utf-8 conversion table with iconv. Character
- * "ď" from the resulting table has to be modified to "ï", used in the word
- * "naïve".
+ * "ď" from the resulting table has to be modified to "ï" (used in the word
+ * "naïve") and "ŕ" to "à" (in "à propos").
  *
  * $Id$
  */
