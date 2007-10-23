@@ -3,5 +3,6 @@ Makefile.in
 gentable
 ydpstress
 ydptest
+ydpxml
 test.html
 
