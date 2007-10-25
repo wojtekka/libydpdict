@@ -4,5 +4,6 @@ gentable
 ydpstress
 ydptest
 ydpxml
-test.html
+*.html
+*.rtf
 
