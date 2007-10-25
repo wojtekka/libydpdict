@@ -584,7 +584,10 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 
 				if (!strncmp(token, "sa", 2)) {
 					if (!margin) {
-						APPEND("<div style=\"margin-left: 1em;\">");
+						if (dict->xhtml_use_style)
+							APPEND("<div class=\"example\">");
+						else
+							APPEND("<div style=\"margin: -1em 2em auto 2em;\">");
 						margin = 1;
 					} else
 						APPEND("<br />");
