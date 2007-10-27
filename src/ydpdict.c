@@ -502,7 +502,7 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				}
 
 				if (margin && (attr & ATTR_SA)) {
-					APPEND("</div>");
+					APPEND("</div><p>");
 					margin = 0;
 				}
 				
@@ -535,7 +535,7 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				token[len] = 0;
 
 				if (!strcmp(token, "par") && margin) {
-					APPEND("</div>");
+					APPEND("</div><p>");
 					attr &= ~ATTR_SA;
 					margin = 0;
 				}
@@ -585,9 +585,9 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				if (!strncmp(token, "sa", 2)) {
 					if (!margin) {
 						if (dict->xhtml_use_style)
-							APPEND("<div class=\"example\">");
+							APPEND("</p><div class=\"example\">");
 						else
-							APPEND("<div style=\"margin: -1em 2em auto 2em;\">");
+							APPEND("</p><div style=\"margin: -1em 2em auto 2em;\">");
 						margin = 1;
 					} else
 						APPEND("<br />");
