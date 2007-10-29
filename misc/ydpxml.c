@@ -7,8 +7,15 @@
 
 int main(int argc, char **argv)
 {
+	const char *cmd;
 	ydpdict_t dict;
 	uint32_t i, j;
+	int valid;
+
+	if (argc > 1 && !strcmp(argv[1], "--valid"))
+		cmd = "xmllint --valid - 1> /dev/null 2> /dev/null";
+	else
+		cmd = "xmllint - 1> /dev/null 2> /dev/null";
 
 	for (j = 0; j < 4; j++) {
 		int dicts[4] = { 100, 101, 200, 201 };
@@ -33,7 +40,7 @@ int main(int argc, char **argv)
 
 			tmp = ydpdict_read_xhtml(&dict, i);
 			
-			f = popen("xmllint - 1> /dev/null 2> /dev/null", "w");
+			f = popen(cmd, "w");
 			fprintf(f, "%s", tmp);
 			if (pclose(f) != 0)
 				printf(" ERROR\n");
