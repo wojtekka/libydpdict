@@ -542,6 +542,14 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 				}
 
 				if (!strcmp(token, "pard")) {
+					// workaround for broken RTF in "żreć",
+					// where \pard is inside \i block
+					//
+					if (level > 0 && (attr & ATTR_I)) {
+						APPEND("</i>");
+						attr &= ~ATTR_I;
+					}
+
 					APPEND("</p><p>");
 					paragraph = 1;
 				}
