@@ -442,21 +442,22 @@ char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
 		
 		APPEND("<?xml version=\"1.0\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\"><head>");
 
-		if (dict->xhtml_title) {
-			APPEND("<title>");
-			APPEND(dict->xhtml_title);
-			APPEND("</title>");
-		}
+		APPEND("<title>");
+		APPEND((dict->xhtml_title) ? dict->xhtml_title : "");
+		APPEND("</title>");
+
 		if (charset) {
 			APPEND("<meta http-equiv=\"Content-type\" content=\"text/html; charset=");
 			APPEND(charset);
 			APPEND("\" />");
 		}
+
 		if (dict->xhtml_style) {
 			APPEND("<style>");
 			APPEND(dict->xhtml_style);
 			APPEND("</style>");
 		}
+
 		APPEND("</head><body>");
 	}
 
