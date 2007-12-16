@@ -6,10 +6,9 @@
 int main(int argc, char **argv)
 {
 	char dat[128], idx[128];
-	ydpdict_t dict;
-	uint32_t i;
+	ydpdict_t *dict;
 	FILE *f;
-	int dictno;
+	int i, dictno;
 	const char *word;
 
 	if (argc == 1) {
@@ -29,21 +28,21 @@ int main(int argc, char **argv)
 	snprintf(dat, sizeof(dat), "%s/dict%03d.dat", DICT_PATH, dictno);
 	snprintf(idx, sizeof(idx), "%s/dict%03d.idx", DICT_PATH, dictno);
 
-	if (ydpdict_open(&dict, dat, idx, YDPDICT_ENCODING_UTF8) == -1) {
+	if (!(dict = ydpdict_open(dat, idx, YDPDICT_ENCODING_UTF8))) {
 		perror("ydpdict_open");
 		return 1;
 	}
 
 	if (!(i = atoi(word)))
-		i = ydpdict_find(&dict, word);
+		i = ydpdict_find_word(dict, word);
 
-	printf("ydpdict_find = %u\n", i);
+	printf("ydpdict_find_word() = %d\n", i);
 	
-	if (i != (uint32_t) -1) {
+	if (i != -1) {
 		char *rtf, *xhtml;
 		
-		rtf = ydpdict_read_rtf(&dict, i);
-		xhtml = ydpdict_read_xhtml(&dict, i);
+		rtf = ydpdict_read_rtf(dict, i);
+		xhtml = ydpdict_read_xhtml(dict, i);
 		
 		printf("-----\n%s\n-----\n%s\n-----\n", rtf, xhtml);
 		
@@ -59,7 +58,7 @@ int main(int argc, char **argv)
 		free(xhtml);
 	}
 
-	ydpdict_close(&dict);
+	ydpdict_close(dict);
 
 	return 0;
 }

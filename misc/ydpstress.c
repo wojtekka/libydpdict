@@ -7,25 +7,27 @@
 
 int main(int argc, char **argv)
 {
-	ydpdict_t dict;
+	ydpdict_t *dict;
 	uint32_t i, j;
 
 	for (j = 0; j < 4; j++) {
-		int dicts[4] = { 100, 101, 200, 201 };
+		int count, dicts[4] = { 100, 101, 200, 201 };
 		char dat[4096], idx[4096];
 
 		snprintf(dat, sizeof(dat), DICT_PATH "/dict%d.dat", dicts[j]);
 		snprintf(idx, sizeof(idx), DICT_PATH "/dict%d.idx", dicts[j]);
 
-		if (ydpdict_open(&dict, dat, idx, YDPDICT_ENCODING_UTF8) == -1) {
+		if (!(dict = ydpdict_open(dat, idx, YDPDICT_ENCODING_UTF8))) {
 			perror("ydpdict_open");
 			return 1;
 		}
 
-		printf("%s %d ", (strrchr(dat, '/')) ? (strrchr(dat, '/') + 1) : dat, dict.word_count);
+		count = ydpdict_get_count(dict);
+
+		printf("%s %d ", (strrchr(dat, '/')) ? (strrchr(dat, '/') + 1) : dat, count);
 		fflush(stdout);
 
-		for (i = 0; i < dict.word_count; i++) {
+		for (i = 0; i < count; i++) {
 			unsigned char *tmp;
 	
 			if (i % 1000 == 999) {
@@ -33,16 +35,16 @@ int main(int argc, char **argv)
 				fflush(stdout);
 			}
 
-			tmp = ydpdict_read_rtf(&dict, i);
+			tmp = ydpdict_read_rtf(dict, i);
 			free(tmp);
 	
-			tmp = ydpdict_read_xhtml(&dict, i);
+			tmp = ydpdict_read_xhtml(dict, i);
 			free(tmp);
 		}
 
 		printf("\n");
 	
-		ydpdict_close(&dict);
+		ydpdict_close(dict);
 	}
 	
 	return 0;
