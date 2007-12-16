@@ -34,31 +34,20 @@ typedef enum {
 } ydpdict_encoding_t;
 	
 /**
- * Dictionary description.
+ * Opaque dictionary structure.
  */
-typedef struct {
-	FILE *dat;
-	FILE *idx;
-	char **words;
-	uint16_t word_count;
-	uint32_t *indices;
-	
-	ydpdict_encoding_t encoding;
+typedef void ydpdict_t;
 
-	int xhtml_header;
-	char *xhtml_title;
-	char *xhtml_style;
-	int xhtml_use_style;
-} ydpdict_t;
-
-int ydpdict_open(ydpdict_t *dict, const char *dat, const char *idx, ydpdict_encoding_t encoding);
-uint32_t ydpdict_find(const ydpdict_t *dict, const char *word);
-char *ydpdict_read_rtf(const ydpdict_t *dict, uint32_t def);
-char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def);
-int ydpdict_xhtml_set_header(ydpdict_t *dict, int header);
-int ydpdict_xhtml_set_style(ydpdict_t *dict, const char *style);
-int ydpdict_xhtml_set_use_style(ydpdict_t *dict, int use_style);
-int ydpdict_xhtml_set_title(ydpdict_t *dict, const char *title);
+ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t encoding);
+int ydpdict_get_count(const ydpdict_t *dict);
+int ydpdict_find_word(const ydpdict_t *dict, const char *word);
+const char *ydpdict_get_word(const ydpdict_t *dict, int def);
+char *ydpdict_read_rtf(const ydpdict_t *dict, int def);
+char *ydpdict_read_xhtml(const ydpdict_t *dict, int def);
+int ydpdict_set_xhtml_header(ydpdict_t *dict, int header);
+int ydpdict_set_xhtml_style(ydpdict_t *dict, const char *style);
+int ydpdict_set_xhtml_use_style(ydpdict_t *dict, int use_style);
+int ydpdict_set_xhtml_title(ydpdict_t *dict, const char *title);
 int ydpdict_close(ydpdict_t *dict);
 char *ydpdict_phonetic_to_utf8(const char *input);
 char *ydpdict_windows1250_to_utf8(const char *input);

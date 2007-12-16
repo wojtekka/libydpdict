@@ -31,6 +31,32 @@
 #include "config.h"
 #endif
 
+/**
+ * Word array entry.
+ */
+typedef struct {
+	char *word;			/** Word in output encoding */
+	uint32_t index;			/** Word definition index in database */
+} ydpdict_word_t;
+
+/**
+ * Dictionary structure.
+ */
+typedef struct {
+	FILE *dat;			/** Database file handle */
+	FILE *idx;			/** Index file handle */
+
+	int count;			/** Word count */
+	ydpdict_word_t *words;		/** Word array */
+	
+	ydpdict_encoding_t encoding;	/** Output encoding */
+ 
+	int xhtml_header;		/** XHTML header output flag */
+	char *xhtml_title;		/** XHTML title */
+	char *xhtml_style;		/** XHTML custom style */
+	int xhtml_use_style;		/** XHTML style usage flag */
+} ydpdict_priv_t;
+
 #define ATTR_B 1
 #define ATTR_CF0 2
 #define ATTR_CF1 4
@@ -114,34 +140,30 @@ static inline uint16_t ydpdict_fix16(uint16_t value)
 }
 
 /**
- * \brief Open dictionary and read words' indices
+ * \brief Open dictionary and read index
  * 
  * The common mistake is to supply lowercase names, while the files have
  * uppercase names.
  * 
- * \param dict allocated dictionary description
  * \param dat data file path
  * \param idx index file path
  * \param encoding output encoding for XHTML
  * 
- * \return 0 on success, -1 on error
+ * \return Pointer to allocated structure or NULL on error
  */
-int ydpdict_open(ydpdict_t *dict, const char *dat, const char *idx, ydpdict_encoding_t encoding)
+ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t encoding)
 {
+	ydpdict_priv_t *dict = NULL;
 	uint32_t index;
+	uint16_t count;
 	int i, j;
 
-	/* Clear ydpdict_t and set defaults */
+	if (!(dict = calloc(1, sizeof(ydpdict_priv_t))))
+		goto failure;
 
-	dict->idx = NULL;
-	dict->dat = NULL;
-	dict->word_count = 0;
-	dict->words = NULL;
-	dict->indices = NULL;
+	/* Set defaults */
+
 	dict->xhtml_header = 1;
-	dict->xhtml_title = NULL;
-	dict->xhtml_style = NULL;
-	dict->xhtml_use_style = 0;
 	dict->encoding = encoding;
 		
 	/* Open files */
@@ -157,23 +179,16 @@ int ydpdict_open(ydpdict_t *dict, const char *dat, const char *idx, ydpdict_enco
 	if (fseek(dict->idx, 8, SEEK_SET) == (off_t) -1)
 		goto failure;
 
-	dict->word_count = 0;
-	
-	if (fread(&dict->word_count, sizeof(dict->word_count), 1, dict->idx) != 1)
+	if (fread(&count, sizeof(count), 1, dict->idx) != 1)
 		goto failure;
 	
-	dict->word_count = ydpdict_fix16(dict->word_count);
+	dict->count = ydpdict_fix16(count);
 
 	/* Allocate memory */
 
-	if (!(dict->indices = calloc(dict->word_count, sizeof(uint32_t))))
+	if (!(dict->words = calloc(dict->count, sizeof(ydpdict_word_t))))
 		goto failure;
 	
-	if (!(dict->words = calloc(dict->word_count + 1, sizeof(char*))))
-		goto failure;
-
-	dict->words[dict->word_count] = NULL;
-    
 	/* Read index table offset */
 
 	if (fseek(dict->idx, 16, SEEK_SET) == (off_t) -1)
@@ -199,12 +214,10 @@ int ydpdict_open(ydpdict_t *dict, const char *dat, const char *idx, ydpdict_enco
 		if (fseek(dict->idx, 4, SEEK_CUR) == (off_t) -1)
 			goto failure;
 
-		dict->indices[i] = 0;
-		
-		if (fread(&dict->indices[i], 4, 1, dict->idx) != 1)
+		if (fread(&index, sizeof(index), 1, dict->idx) != 1)
 			goto failure;
 		
-		dict->indices[i] = ydpdict_fix32(dict->indices[i]);
+		dict->words[i].index = ydpdict_fix32(index);
 
 		j = 0;
 
@@ -230,17 +243,18 @@ int ydpdict_open(ydpdict_t *dict, const char *dat, const char *idx, ydpdict_enco
 			}
 		} while (j < sizeof(buf) && buf[j++]);
 
-		if (!(dict->words[i] = strdup(buf)))
+		if (!(dict->words[i].word = strdup(buf)))
 			goto failure;
 
-	} while (++i < dict->word_count);
+	} while (++i < dict->count);
 
-	return 0;
+	return dict;
 	
 failure:
-	ydpdict_close(dict);
+	if (dict)
+		ydpdict_close(dict);
 
-	return -1;
+	return NULL;
 }
 
 /**
@@ -252,20 +266,21 @@ failure:
  *
  * \return allocated buffer with definition on success, NULL on error
  */
-char *ydpdict_read_rtf(const ydpdict_t *dict, uint32_t def)
+char *ydpdict_read_rtf(const ydpdict_t *pdict, int def)
 {
+	const ydpdict_priv_t *dict = pdict;
 	char *text = NULL;
 	uint32_t len = 0;
 
-	if (!dict || def >= dict->word_count) {
+	if (!dict || def >= dict->count) {
 		errno = EINVAL;
 		return NULL;
 	}
 
-	if (fseek(dict->dat, dict->indices[def], SEEK_SET) == (off_t) -1)
+	if (fseek(dict->dat, dict->words[def].index, SEEK_SET) == (off_t) -1)
 		goto failure;
 
-	if (fread(&len, 4, 1, dict->dat) != 1)
+	if (fread(&len, sizeof(len), 1, dict->dat) != 1)
 		goto failure;
 	
 	len = ydpdict_fix32(len);
@@ -293,20 +308,57 @@ failure:
  * \param dict dictionary description
  * \param word complete or partial word
  * 
- * \return definition index on success, (uint32_t) -1 on error
+ * \return definition index on success, -1 on error
  */
-uint32_t ydpdict_find(const ydpdict_t *dict, const char *word)
+int ydpdict_find_word(const ydpdict_t *pdict, const char *word)
 {
+	const ydpdict_priv_t *dict = pdict;
 	int i = 0;
 
 	if (!dict)
-		return (uint32_t) -1;
+		return -1;
 	
-	for (; i < dict->word_count; i++)
-		if (!strncasecmp(dict->words[i], word, strlen(word)))
+	for (; i < dict->count; i++) {
+		if (!strncasecmp(dict->words[i].word, word, strlen(word)))
 			return i;
+	}
 	
-	return (uint32_t) -1;
+	return -1;
+}
+
+/**
+ * \brief Returns number of words in dictionary
+ *
+ * \param dict dictionary description
+ * 
+ * \return word count on success, -1 on error
+ */
+int ydpdict_get_count(const ydpdict_t *pdict)
+{
+	const ydpdict_priv_t *dict = pdict;
+
+	if (!dict)
+		return -1;
+
+	return dict->count;
+}
+
+/**
+ * \brief Read word from dictionary
+ *
+ * \param dict dictionary description
+ * \param def word index
+ *
+ * \return constant buffer with word on success, NULL on error
+ */
+const char *ydpdict_get_word(const ydpdict_t *pdict, int def)
+{
+	const ydpdict_priv_t *dict = pdict;
+
+	if (!dict || def >= dict->count)
+		return NULL;
+
+	return dict->words[def].word;
 }
 
 /**
@@ -316,20 +368,18 @@ uint32_t ydpdict_find(const ydpdict_t *dict, const char *word)
  *
  * \return 0 on success, -1 on error
  */
-int ydpdict_close(ydpdict_t *dict)
+int ydpdict_close(ydpdict_t *pdict)
 {
-	if (dict->indices) {
-		free(dict->indices);
-		dict->indices = NULL;
-	}
-	
+	ydpdict_priv_t *dict = pdict;
+
+	if (!dict)
+		return -1;
+
 	if (dict->words) {
 		int i = 0;
 
-		while (dict->words[i]) {
-			free(dict->words[i]);
-			i++;
-		}
+		for (i = 0; i < dict->count; i++)
+			free(dict->words[i].word);
 		
 		free(dict->words);
 		dict->words = NULL;
@@ -354,6 +404,8 @@ int ydpdict_close(ydpdict_t *dict)
 		free(dict->xhtml_style);
 		dict->xhtml_style = NULL;
 	}
+
+	free(dict);
 
 	return 0;
 }
@@ -400,8 +452,9 @@ static int ydpdict_append(char **buf, int *len, const char *str)
  *
  * \return allocated buffer with definition on success, NULL on error
  */
-char *ydpdict_read_xhtml(const ydpdict_t *dict, uint32_t def)
+char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 {
+	const ydpdict_priv_t *dict = pdict;
 	char *buf = NULL;
 	int attr_stack[16], block_stack[16], level = 0, attr = 0, block_begin = 0;
 	int paragraph = 1, margin = 0, buf_len;
@@ -720,8 +773,10 @@ failure:
  *
  * \result 0 on success, -1 on error
  */
-int ydpdict_xhtml_set_style(ydpdict_t *dict, const char *style)
+int ydpdict_set_xhtml_style(ydpdict_t *pdict, const char *style)
 {
+	ydpdict_priv_t *dict = pdict;
+
 	if (!dict) {
 		errno = EINVAL;
 		return -1;
@@ -746,8 +801,10 @@ int ydpdict_xhtml_set_style(ydpdict_t *dict, const char *style)
  *
  * \result 0 on success, -1 on error
  */
-int ydpdict_xhtml_set_title(ydpdict_t *dict, const char *title)
+int ydpdict_set_xhtml_title(ydpdict_t *pdict, const char *title)
 {
+	ydpdict_priv_t *dict = pdict;
+
 	if (!dict) {
 		errno = EINVAL;
 		return -1;
@@ -772,8 +829,10 @@ int ydpdict_xhtml_set_title(ydpdict_t *dict, const char *title)
  *
  * \result 0 on success, -1 on error
  */
-int ydpdict_xhtml_set_header(ydpdict_t *dict, int header)
+int ydpdict_set_xhtml_header(ydpdict_t *pdict, int header)
 {
+	ydpdict_priv_t *dict = pdict;
+
 	if (!dict) {
 		errno = EINVAL;
 		return -1;
@@ -785,15 +844,21 @@ int ydpdict_xhtml_set_header(ydpdict_t *dict, int header)
 }
 
 /**
- * \brief Toggle XHTML style usage
+ * \brief Toggle CSS style in XHTML
+ *
+ * If CSS style is enabled, all text attributes are described by CSS classes.
+ * Otherwise all style information is embedded directly in style tag
+ * atttributes.
  *
  * \param dict dictionary description
  * \param use_style style usage flag
  *
  * \result 0 on success, -1 on error
  */
-int ydpdict_xhtml_set_use_style(ydpdict_t *dict, int use_style)
+int ydpdict_set_xhtml_use_style(ydpdict_t *pdict, int use_style)
 {
+	ydpdict_priv_t *dict = pdict;
+
 	if (!dict) {
 		errno = EINVAL;
 		return -1;
