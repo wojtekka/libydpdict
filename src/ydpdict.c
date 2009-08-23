@@ -1,6 +1,6 @@
 /*
  *  ydpdict support library
- *  (C) Copyright 1998-2007 Wojtek Kaniewski <wojtekka@toxygen.net>
+ *  (C) Copyright 1998-2009 Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License Version
@@ -57,17 +57,21 @@ typedef struct {
 	int xhtml_use_style;		/** XHTML style usage flag */
 } ydpdict_priv_t;
 
-#define ATTR_B 1
-#define ATTR_CF0 2
-#define ATTR_CF1 4
-#define ATTR_CF2 8
-#define ATTR_QC 16
-#define ATTR_SUPER 32
-#define ATTR_F 64
-#define ATTR_F1 128
-#define ATTR_I 256
-#define ATTR_CF5 1024
-#define ATTR_SA 2048
+typedef enum {
+	ATTR_B = (1 << 0),
+	ATTR_CF0 = (1 << 1),
+	ATTR_CF1 = (1 << 2),
+	ATTR_CF2 = (1 << 3),
+	ATTR_QC = (1 << 4),
+	ATTR_SUPER = (1 << 5),
+	ATTR_F = (1 << 6),
+	ATTR_F1 = (1 << 7),
+	ATTR_I = (1 << 8),
+	ATTR_CF5 = (1 << 9),
+	ATTR_SA = (1 << 10),
+	ATTR_B0 = (1 << 11),
+	ATTR_I0 = (1 << 12),
+} ydpdict_attr_t;
 
 /**
  * \brief Conversion table from phonetic characters to UTF-8
@@ -158,7 +162,9 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 	uint16_t count;
 	int i, j;
 
-	if (!(dict = calloc(1, sizeof(ydpdict_priv_t))))
+	dict = calloc(1, sizeof(ydpdict_priv_t));
+
+	if (dict == NULL)
 		goto failure;
 
 	/* Set defaults */
@@ -168,10 +174,14 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 		
 	/* Open files */
 
-	if (!(dict->idx = fopen(idx, "r")))
+	dict->idx = fopen(idx, "r");
+
+	if (dict->idx == NULL)
 		goto failure;
 	
-	if (!(dict->dat = fopen(dat, "r")))
+	dict->dat = fopen(dat, "r");
+
+	if (dict->dat == NULL)
 		goto failure;
 
 	/* Read word count */
@@ -186,7 +196,9 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 
 	/* Allocate memory */
 
-	if (!(dict->words = calloc(dict->count, sizeof(ydpdict_word_t))))
+	dict->words = calloc(dict->count, sizeof(ydpdict_word_t));
+
+	if (dict->words == NULL)
 		goto failure;
 	
 	/* Read index table offset */
@@ -231,8 +243,10 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 				buf[j] = ch;
 			else {
 				if (ch > 127) {
-					const char *str = ydpdict_windows1250_to_utf8_table[ch - 128];
+					const char *str;
 					int k;
+
+					str = ydpdict_windows1250_to_utf8_table[ch - 128];
 
 					for (k = 0; str[k] && j < sizeof(buf); k++)
 						buf[j++] = str[k];
@@ -243,7 +257,9 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 			}
 		} while (j < sizeof(buf) && buf[j++]);
 
-		if (!(dict->words[i].word = strdup(buf)))
+		dict->words[i].word = strdup(buf);
+
+		if (dict->words[i].word == NULL)
 			goto failure;
 
 	} while (++i < dict->count);
@@ -251,7 +267,7 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 	return dict;
 	
 failure:
-	if (dict)
+	if (dict != NULL)
 		ydpdict_close(dict);
 
 	return NULL;
@@ -272,7 +288,7 @@ char *ydpdict_read_rtf(const ydpdict_t *pdict, int def)
 	char *text = NULL;
 	uint32_t len = 0;
 
-	if (!dict || def >= dict->count) {
+	if (dict == NULL || def >= dict->count) {
 		errno = EINVAL;
 		return NULL;
 	}
@@ -285,7 +301,9 @@ char *ydpdict_read_rtf(const ydpdict_t *pdict, int def)
 	
 	len = ydpdict_fix32(len);
 
-	if (!(text = malloc(len + 1)))
+	text = malloc(len + 1);
+
+	if (text == NULL)
 		goto failure;
 
 	if (fread(text, 1, len, dict->dat) != len)
@@ -296,7 +314,7 @@ char *ydpdict_read_rtf(const ydpdict_t *pdict, int def)
 	return text;
 
 failure:
-	if (text)
+	if (text != NULL)
 		free(text);
 
 	return NULL;
@@ -315,11 +333,11 @@ int ydpdict_find_word(const ydpdict_t *pdict, const char *word)
 	const ydpdict_priv_t *dict = pdict;
 	int i = 0;
 
-	if (!dict)
+	if (dict == NULL)
 		return -1;
 	
 	for (; i < dict->count; i++) {
-		if (!strncasecmp(dict->words[i].word, word, strlen(word)))
+		if (strncasecmp(dict->words[i].word, word, strlen(word)) == 0)
 			return i;
 	}
 	
@@ -337,7 +355,7 @@ int ydpdict_get_count(const ydpdict_t *pdict)
 {
 	const ydpdict_priv_t *dict = pdict;
 
-	if (!dict)
+	if (dict == NULL)
 		return -1;
 
 	return dict->count;
@@ -355,7 +373,7 @@ const char *ydpdict_get_word(const ydpdict_t *pdict, int def)
 {
 	const ydpdict_priv_t *dict = pdict;
 
-	if (!dict || def >= dict->count)
+	if (dict == NULL || def >= dict->count)
 		return NULL;
 
 	return dict->words[def].word;
@@ -372,11 +390,11 @@ int ydpdict_close(ydpdict_t *pdict)
 {
 	ydpdict_priv_t *dict = pdict;
 
-	if (!dict)
+	if (dict == NULL)
 		return -1;
 
-	if (dict->words) {
-		int i = 0;
+	if (dict->words != NULL) {
+		int i;
 
 		for (i = 0; i < dict->count; i++)
 			free(dict->words[i].word);
@@ -385,25 +403,21 @@ int ydpdict_close(ydpdict_t *pdict)
 		dict->words = NULL;
 	}
 	
-	if (dict->dat) {
+	if (dict->dat != NULL) {
 		fclose(dict->dat);
 		dict->dat = NULL;
 	}
 
-	if (dict->idx) {
+	if (dict->idx != NULL) {
 		fclose(dict->idx);
 		dict->idx = NULL;
 	}
 
-	if (dict->xhtml_title) {
-		free(dict->xhtml_title);
-		dict->xhtml_title = NULL;
-	}
+	free(dict->xhtml_title);
+	dict->xhtml_title = NULL;
 
-	if (dict->xhtml_style) {
-		free(dict->xhtml_style);
-		dict->xhtml_style = NULL;
-	}
+	free(dict->xhtml_style);
+	dict->xhtml_style = NULL;
 
 	free(dict);
 
@@ -456,8 +470,9 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 {
 	const ydpdict_priv_t *dict = pdict;
 	char *buf = NULL;
-	int attr_stack[16], block_stack[16], level = 0, attr = 0, block_begin = 0;
-	int paragraph = 1, margin = 0, buf_len;
+	ydpdict_attr_t attr = 0, attr_pending = 0, attr_stack[32];
+	int level = 0;
+	int paragraph = 0, margin = 0, buf_len;
 	unsigned char *rtf, *rtf_orig;
 
 #undef APPEND
@@ -467,14 +482,49 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 			goto failure; \
 	} while (0)
 
-	if (!(rtf = (unsigned char*) ydpdict_read_rtf(dict, def)))
+#undef APPEND_SPAN
+#define APPEND_SPAN(class, color) \
+	do { \
+		if (dict->xhtml_use_style) { \
+			APPEND("<span class=\""); \
+			APPEND(class); \
+			APPEND("\">"); \
+		} else { \
+			APPEND("<span style=\"color: "); \
+			APPEND(color); \
+			APPEND(";\">"); \
+		} \
+	} while (0)
+
+#undef CLOSE_TAGS
+#define CLOSE_TAGS() \
+	do { \
+		if ((attr & ATTR_SUPER) != 0) \
+			APPEND("</sup>"); \
+		\
+		if ((attr & (ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5)) != 0) \
+			APPEND("</span>"); \
+		\
+		if ((attr & ATTR_I) != 0) \
+			APPEND("</i>"); \
+		\
+		if ((attr & ATTR_B) != 0) \
+			APPEND("</b>"); \
+	} while (0)
+
+
+	rtf = (unsigned char*) ydpdict_read_rtf(dict, def);
+
+	if (rtf == NULL)
 		return NULL;
 
 	rtf_orig = rtf;
 
 	buf_len = 256;
 
-	if (!(buf = malloc(buf_len)))
+	buf = malloc(buf_len);
+
+	if (buf == NULL)
 		goto failure;
 	
 	buf[0] = 0;
@@ -496,16 +546,16 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 		APPEND("<?xml version=\"1.0\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\"><head>");
 
 		APPEND("<title>");
-		APPEND((dict->xhtml_title) ? dict->xhtml_title : "");
+		APPEND((dict->xhtml_title != NULL) ? dict->xhtml_title : "");
 		APPEND("</title>");
 
-		if (charset) {
+		if (charset != NULL) {
 			APPEND("<meta http-equiv=\"Content-type\" content=\"text/html; charset=");
 			APPEND(charset);
 			APPEND("\" />");
 		}
 
-		if (dict->xhtml_style) {
+		if (dict->xhtml_style != NULL) {
 			APPEND("<style>");
 			APPEND(dict->xhtml_style);
 			APPEND("</style>");
@@ -516,58 +566,41 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 
 	APPEND("<p>");
 
-	while (*rtf) {
+	while (*rtf != 0) {
 		switch (*rtf) {
 			case '{':
+			{
 				if (level < 16) {
-					attr_stack[level] = attr;
-					block_stack[level] = block_begin;
+					attr_stack[level] = attr_pending;
 					level++;
 				}
 
-				block_begin = 1;
-
-				attr = 0;
-				
 				if (margin && !(attr_stack[level - 1] & ATTR_SA))
 					attr |= ATTR_SA;
 				
 				rtf++;
+
 				break;
+			}
 
 			case '}':
-				if (!level)
+			{
+				if (level < 1)
 					break;
 
-				// don't end tags if they haven't started.
-				//
-				if (!block_begin) {
-					if ((attr & ATTR_SUPER))
-						APPEND("</sup>");
-
-					if ((attr & (ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5)))
-						APPEND("</span>");
-				
-					if ((attr & ATTR_I))
-						APPEND("</i>");
-
-					if ((attr & ATTR_B))
-						APPEND("</b>");
-				}
-
-				if (margin && (attr & ATTR_SA)) {
+				if (margin && (attr & ATTR_SA) != 0) {
+					CLOSE_TAGS();
 					APPEND("</div><p>");
+					attr = 0;
 					margin = 0;
 				}
-				
-				paragraph = 0;
 
 				level--;
-				attr = attr_stack[level];
-				block_begin = block_stack[level];
+				attr_pending = attr_stack[level];
 
 				rtf++;
 				break;
+			}
 
 			case '\\':
 			{
@@ -577,147 +610,152 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 				rtf++;
 				
 				while (isalnum(*rtf)) {
-					if (len < 14)
+					if (len < sizeof(token) - 1)
 						token[len++] = *rtf;
 					
 					rtf++;
 				}
 
+				token[len] = 0;
+
 				if (*rtf == ' ')
 					rtf++;
 				
-				token[len] = 0;
-
-				if (!strcmp(token, "par") && margin) {
-					APPEND("</div><p>");
-					attr &= ~ATTR_SA;
-					margin = 0;
-				}
-
-				if (!strcmp(token, "pard")) {
-					// workaround for broken RTF in "żreć",
-					// where \pard is inside \i block
-					//
-					if (level > 0 && (attr & ATTR_I)) {
-						APPEND("</i>");
-						attr &= ~ATTR_I;
-					}
-
-					APPEND("</p><p>");
+				if (strncmp(token, "par", 3) == 0 && (attr & ATTR_QC) == 0) {
 					paragraph = 1;
+
+					if (strcmp(token, "pard") == 0)
+						attr_pending = 0;
 				}
 
-				if (!strcmp(token, "line") && !paragraph)
+				if (strcmp(token, "line") == 0 && !paragraph)
 					APPEND("<br />");
 
-				if (block_begin) {
-					if (!strcmp(token, "b"))
-						attr |= ATTR_B;
+				if (strcmp(token, "b") == 0)
+					attr_pending |= ATTR_B;
 
-					if (!strcmp(token, "i"))
-						attr |= ATTR_I;
+				if (strcmp(token, "b0") == 0)
+					attr_pending &= ~ATTR_B;
 
-					if (!strcmp(token, "cf0"))
-						attr |= ATTR_CF0;
+				if (strcmp(token, "i") == 0)
+					attr_pending |= ATTR_I;
 
-					if (!strcmp(token, "cf1"))
-						attr |= ATTR_CF1;
+				if (strcmp(token, "i0") == 0)
+					attr_pending &= ~ATTR_I;
 
-					if (!strcmp(token, "cf2"))
-						attr |= ATTR_CF2;
+				if (strcmp(token, "cf0") == 0) {
+					attr_pending &= ~(ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5);
+					attr_pending |= ATTR_CF0;
+				}
+
+				if (strcmp(token, "cf1") == 0) {
+					attr_pending &= ~(ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5);
+					attr_pending |= ATTR_CF1;
+				}
+
+				if (strcmp(token, "cf2") == 0) {
+					attr_pending &= ~(ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5);
+					attr_pending |= ATTR_CF2;
+				}
 	
-					if (!strcmp(token, "cf5"))
-						attr |= ATTR_CF5;
+				if (strcmp(token, "cf5") == 0) {
+					attr_pending &= ~(ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5);
+					attr_pending |= ATTR_CF5;
 				}
 
-				if (!strcmp(token, "qc"))
+				if (strcmp(token, "super") == 0)
+					attr_pending |= ATTR_SUPER;
+
+				if (strcmp(token, "qc") == 0) {
+					attr_pending |= ATTR_QC;
 					attr |= ATTR_QC;
-
-				if (!strcmp(token, "super")) {
-					attr |= ATTR_SUPER;
-					block_begin = 1;
 				}
 
-				if (!strncmp(token, "f", 1) && strcmp(token, "f1"))
+				if (strncmp(token, "f", 1) == 0 && strcmp(token, "f1") != 0) {
+					attr_pending |= ATTR_F;
 					attr |= ATTR_F;
-
-				if (!strcmp(token, "f1"))
-					attr |= ATTR_F1;
-
-				if (!strncmp(token, "sa", 2)) {
-					if (!margin) {
-						if (dict->xhtml_use_style)
-							APPEND("</p><div class=\"example\">");
-						else
-							APPEND("</p><div style=\"margin: -1em 2em auto 2em;\">");
-						margin = 1;
-					} else
-						APPEND("<br />");
 				}
-					
+
+				if (strcmp(token, "f1") == 0) {
+					attr_pending |= ATTR_F1;
+					attr |= ATTR_F1;
+				}
+
+				if (strncmp(token, "sa", 2) == 0) {
+					if (!margin) {
+						paragraph = 2;
+					} else {
+						APPEND("<br />");
+					}
+				}
+
 				break;
 			}
 
 			default:
-				if (block_begin && *rtf != ' ') {
-					block_begin = 0;
-
-					if ((attr & ATTR_B))
-						APPEND("<b>");
-
-					if ((attr & ATTR_I))
-						APPEND("<i>");
-
-					if ((attr & (ATTR_CF0 | ATTR_CF1 | ATTR_CF2 | ATTR_CF5))) {
-						const char *color = NULL, *class = NULL;
-
-						if ((attr & ATTR_CF0)) {
-							color = "blue";
-							class = "cf0";
-						}
-
-						if ((attr & ATTR_CF1)) {
-							color = "green";
-							class = "cf1";
-						}
-
-						if ((attr & ATTR_CF2)) {
-							color = "red";
-							class = "cf2";
-						}
-
-						if ((attr & ATTR_CF5)) {
-							color = "magenta";
-							class = "cf5";
-						}
-						
-						if (dict->xhtml_use_style) {
-							APPEND("<span class=\"");
-							APPEND(class);
-							APPEND("\">");
-						} else {
-							APPEND("<span style=\"color: ");
-							APPEND(color);
-							APPEND(";\">");
-						}
-					}
-
-					if ((attr & ATTR_SUPER))
-						APPEND("<sup>");
-				}
-
+			{
 				// workaround for square bracket like in
 				// {[\f1\cf5 pronunciation]}
 				//
-				if (*rtf == ']' && (attr & ATTR_F1) && (attr & ATTR_CF5)) {
-					attr &= ~ATTR_CF5;
-					APPEND("</span>");
+				if (*rtf == ']' && (attr & ATTR_F1) != 0 && (attr & ATTR_CF5) != 0)
+					attr_pending &= ~ATTR_CF5;
+
+				if (!isspace(*rtf) && paragraph != 0) {
+					CLOSE_TAGS();
+
+					if (margin) {
+						APPEND("</div>");
+						attr &= ~ATTR_SA;
+						margin = 0;
+					} else {
+						APPEND("</p>");
+					}
+
+					if (paragraph == 2) {
+						if (dict->xhtml_use_style)
+							APPEND("<div class=\"example\">");
+						else
+							APPEND("<div style=\"margin: -1em 2em auto 2em;\">");
+						margin = 1;
+					} else {
+						APPEND("<p>");
+					}
+
+					attr = 0;
+					paragraph = 0;
 				}
 
-				if (!(attr & ATTR_QC) && (dict->encoding == YDPDICT_ENCODING_UTF8)) {
-					if ((attr & ATTR_F1) && *rtf > 127 && *rtf < 160)
+				if (!isspace(*rtf) && attr != attr_pending) {
+					CLOSE_TAGS();
+
+					if ((attr_pending & ATTR_B) != 0)
+						APPEND("<b>");
+
+					if ((attr_pending & ATTR_I) != 0)
+						APPEND("<i>");
+
+					if ((attr_pending & ATTR_CF0) != 0)
+						APPEND_SPAN("cf0", "blue");
+
+					if ((attr_pending & ATTR_CF1) != 0)
+						APPEND_SPAN("cf1", "green");
+
+					if ((attr_pending & ATTR_CF2) != 0)
+						APPEND_SPAN("cf2", "red");
+
+					if ((attr_pending & ATTR_CF5) != 0)
+						APPEND_SPAN("cf5", "magenta");
+
+					if ((attr_pending & ATTR_SUPER) != 0 && (attr & ATTR_SUPER) == 0)
+						APPEND("<sup>");
+
+					attr = attr_pending;
+				}
+
+				if ((attr & ATTR_QC) == 0 && (dict->encoding == YDPDICT_ENCODING_UTF8)) {
+					if ((attr & ATTR_F1) != 0 && *rtf > 127 && *rtf < 160)
 						APPEND(ydpdict_phonetic_to_utf8_table[*rtf - 128]);
-					else if (((attr & ATTR_F1) && *rtf > 160) || *rtf > 127)
+					else if (((attr & ATTR_F1) != 0 && *rtf > 160) || *rtf > 127)
 						APPEND(ydpdict_windows1250_to_utf8_table[*rtf - 128]);
 					else if (*rtf == 127)
 						APPEND("~");
@@ -733,7 +771,7 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 					}
 				}
 
-				if (!(attr & ATTR_QC) && (dict->encoding == YDPDICT_ENCODING_WINDOWS1250)) {
+				if ((attr & ATTR_QC) == 0 && (dict->encoding == YDPDICT_ENCODING_WINDOWS1250)) {
 					if (*rtf == 127)
 						APPEND("~");
 					else {
@@ -742,15 +780,21 @@ char *ydpdict_read_xhtml(const ydpdict_t *pdict, int def)
 					}
 				}
 
-				paragraph = 0;
-
 				rtf++;
+
+				break;
+			}
 		}
 	}
 
-	free(rtf_orig);
+	CLOSE_TAGS();
 
-	APPEND("</p>");
+	if (!margin)
+		APPEND("</p>");
+	else
+		APPEND("</div>");
+
+	free(rtf_orig);
 
 	if (dict->xhtml_header)
 		APPEND("</body></html>");
@@ -777,18 +821,20 @@ int ydpdict_set_xhtml_style(ydpdict_t *pdict, const char *style)
 {
 	ydpdict_priv_t *dict = pdict;
 
-	if (!dict) {
+	if (dict == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (dict->xhtml_style) {
-		free(dict->xhtml_style);
-		dict->xhtml_style = NULL;
-	}
+	free(dict->xhtml_style);
+	dict->xhtml_style = NULL;
 
-	if (style && (!(dict->xhtml_style = strdup(style))))
-		return -1;
+	if (style != NULL) {
+		dict->xhtml_style = strdup(style);
+
+		if (dict->xhtml_style == NULL)
+			return -1;
+	}
 	
 	return 0;
 }
@@ -805,18 +851,20 @@ int ydpdict_set_xhtml_title(ydpdict_t *pdict, const char *title)
 {
 	ydpdict_priv_t *dict = pdict;
 
-	if (!dict) {
+	if (dict == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (dict->xhtml_title) {
-		free(dict->xhtml_title);
-		dict->xhtml_title = NULL;
-	}
+	free(dict->xhtml_title);
+	dict->xhtml_title = NULL;
 
-	if (title && (!(dict->xhtml_title = strdup(title))))
-		return -1;
+	if (title != NULL) {
+		dict->xhtml_title = strdup(title);
+
+		if (dict->xhtml_title == NULL)
+			return -1;
+	}
 	
 	return 0;
 }
@@ -833,7 +881,7 @@ int ydpdict_set_xhtml_header(ydpdict_t *pdict, int header)
 {
 	ydpdict_priv_t *dict = pdict;
 
-	if (!dict) {
+	if (dict == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -859,7 +907,7 @@ int ydpdict_set_xhtml_use_style(ydpdict_t *pdict, int use_style)
 {
 	ydpdict_priv_t *dict = pdict;
 
-	if (!dict) {
+	if (dict == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -888,10 +936,12 @@ char *ydpdict_phonetic_to_utf8(const char *input)
 			len++;
 	}
 
-	if (!(result = malloc(len + 1)))
+	result = malloc(len + 1);
+
+	if (result == NULL)
 		return NULL;
 
-	strcpy(result, "");
+	result[0] = 0;
 
 	for (i = 0; input[i]; i++) {
 		if (((unsigned char*) input)[i] >= 128 && ((unsigned char*) input)[i] < 160)
@@ -925,10 +975,12 @@ char *ydpdict_windows1250_to_utf8(const char *input)
 			len++;
 	}
 
-	if (!(result = malloc(len + 1)))
+	result = malloc(len + 1);
+
+	if (result == NULL)
 		return NULL;
 
-	strcpy(result, "");
+	result[0] = 0;
 
 	for (i = 0; input[i]; i++) {
 		if (((unsigned char*) input)[i] >= 128)
