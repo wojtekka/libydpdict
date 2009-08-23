@@ -7,7 +7,7 @@ offset  length  description
 4       4       ?
 8       2       record count
 10      2       ?
-12	4       ?
+12      4       ?
 16      4       record table offset
 
 .idx file record
