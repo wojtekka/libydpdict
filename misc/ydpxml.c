@@ -2,20 +2,50 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ydpdict/ydpdict.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #define DICT_PATH "/usr/local/share/ydpdict"
+
+int parse_xml(const char *xml, int validate)
+{
+	xmlParserCtxtPtr ctxt;
+	xmlDocPtr doc;
+
+	ctxt = xmlNewParserCtxt();
+
+	if (ctxt == NULL) {
+		perror("xmlNewParserCtxt");
+		exit(1);
+	}
+
+	doc = xmlCtxtReadMemory(ctxt, xml, strlen(xml), "", NULL, (validate) ? XML_PARSE_DTDVALID : 0);
+
+	if (doc == NULL) {
+		return 0;
+	} else {
+		if (validate && ctxt->valid == 0)
+			return 0;
+
+		xmlFreeDoc(doc);
+	}
+
+	xmlFreeParserCtxt(ctxt);
+
+	return 1;
+}
 
 int main(int argc, char **argv)
 {
 	const char *cmd;
 	ydpdict_t *dict;
 	uint32_t i, j;
-	int valid;
+	int validate;
 
 	if (argc > 1 && !strcmp(argv[1], "--valid"))
-		cmd = "xmllint --valid - 1> /dev/null 2> /dev/null";
+		validate = 1;
 	else
-		cmd = "xmllint - 1> /dev/null 2> /dev/null";
+		validate = 0;
 
 	for (j = 0; j < 4; j++) {
 		int count, dicts[4] = { 100, 101, 200, 201 };
@@ -41,16 +71,14 @@ int main(int argc, char **argv)
 			fflush(stdout);
 
 			tmp = ydpdict_read_xhtml(dict, i);
-			
-			f = popen(cmd, "w");
-			fprintf(f, "%s", tmp);
-			if (pclose(f) != 0)
+
+			if (!parse_xml(tmp, validate))
 				printf(" ERROR\n");
 			
 			free(tmp);
 		}
 
-		printf("\r[033K");
+		printf("\r\033[K");
 		fflush(stdout);
 	
 		ydpdict_close(dict);

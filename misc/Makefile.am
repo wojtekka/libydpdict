@@ -8,7 +8,7 @@ ydptest:	ydptest.c $(libydpdict)
 	$(CC) $(CFLAGS) $< -o $@ $(libydpdict)
 
 ydpxml:	ydpxml.c $(libydpdict)
-	$(CC) $(CFLAGS) $< -o $@ $(libydpdict)
+	$(CC) $(shell pkg-config libxml-2.0 --cflags --libs) $(CFLAGS) $< -o $@ $(libydpdict)
 
 gentable:	gentable.c
 	$(CC) $(CFLAGS) $< -o $@
