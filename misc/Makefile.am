@@ -1,4 +1,4 @@
-EXTRA_DIST = gentable.c ydptest.c ydpstress.c
+EXTRA_DIST = gentable.c ydptest.c ydpstress.c mkdict.py
 libydpdict = ../src/.libs/libydpdict.a
 
 ydpstress:	ydpstress.c $(libydpdict)
@@ -14,4 +14,4 @@ gentable:	gentable.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f gmon.out test.html ydpstress ydptest *.o *~ core
+	rm -f gmon.out test.html ydpstress ydptest *.o *~ core *.dat *.idx
