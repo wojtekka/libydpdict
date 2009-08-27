@@ -14,4 +14,4 @@ gentable:	gentable.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f gmon.out test.html ydpstress ydptest *.o *~ core *.dat *.idx
+	rm -f gmon.out test.html ydpstress ydptest ydpxml *.o *~ core *.dat *.idx
