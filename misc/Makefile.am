@@ -1,4 +1,4 @@
-EXTRA_DIST = gentable.c ydptest.c ydpstress.c mkdict.py
+EXTRA_DIST = gentable.c ydptest.c ydpstress.c ydpxml.c mkdict.py
 libydpdict = ../src/.libs/libydpdict.a
 
 ydpstress:	ydpstress.c $(libydpdict)
