@@ -57,20 +57,23 @@ typedef struct {
 	int xhtml_use_style;		/** XHTML style usage flag */
 } ydpdict_priv_t;
 
+/*
+ * Character attributes.
+ */
 typedef enum {
-	ATTR_B = (1 << 0),
-	ATTR_CF0 = (1 << 1),
-	ATTR_CF1 = (1 << 2),
-	ATTR_CF2 = (1 << 3),
-	ATTR_QC = (1 << 4),
-	ATTR_SUPER = (1 << 5),
-	ATTR_F = (1 << 6),
-	ATTR_F1 = (1 << 7),
-	ATTR_I = (1 << 8),
-	ATTR_CF5 = (1 << 9),
-	ATTR_SA = (1 << 10),
-	ATTR_B0 = (1 << 11),
-	ATTR_I0 = (1 << 12),
+	ATTR_B = (1 << 0),		/** Bold */
+	ATTR_CF0 = (1 << 1),		/** Color #0 */
+	ATTR_CF1 = (1 << 2),		/** Color #1 */
+	ATTR_CF2 = (1 << 3),		/** Color #2 */
+	ATTR_QC = (1 << 4),		/** Comment */
+	ATTR_SUPER = (1 << 5),		/** Superscript */
+	ATTR_F = (1 << 6),		/** Font */
+	ATTR_F1 = (1 << 7),		/** Phonetic font */
+	ATTR_I = (1 << 8),		/** Italic */
+	ATTR_CF5 = (1 << 9),		/** Color #5 */
+	ATTR_SA = (1 << 10),		/** Margin? */
+	ATTR_B0 = (1 << 11),		/** No bold */
+	ATTR_I0 = (1 << 12),		/** No italic */
 } ydpdict_attr_t;
 
 /**
