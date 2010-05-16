@@ -1,6 +1,6 @@
 /*
  *  ydpdict support library
- *  (C) Copyright 1998-2009 Wojtek Kaniewski <wojtekka@toxygen.net>
+ *  (C) Copyright 1998-2010 Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License Version
@@ -30,6 +30,11 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+/**
+ * Index file magic.
+ */
+#define YDPDICT_IDX_MAGIC 0x8d4e11d5
 
 /**
  * Word array entry.
@@ -77,7 +82,8 @@ typedef enum {
 } ydpdict_attr_t;
 
 /**
- * \brief Conversion table from phonetic characters to UTF-8
+ * \brief Conversion table from phonetic characters to UTF-8.
+ * \note It covers characters in range 128..159.
  */
 static char *ydpdict_phonetic_to_utf8_table[32] =
 {
@@ -88,7 +94,17 @@ static char *ydpdict_phonetic_to_utf8_table[32] =
 };
 
 /**
- * \brief Conversion table from windows-1250 to UTF-8
+ * \brief Table of superscript digits in UTF-8.
+ * \note It covers characters in range 0..9.
+ */
+static char *ydpdict_superscript_to_utf8_table[10] =
+{
+	"⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"
+};
+
+/**
+ * \brief Conversion table from windows-1250 to UTF-8.
+ * \note It covers characters in range 128..255.
  */
 static char *ydpdict_windows1250_to_utf8_table[128] =
 {
@@ -162,6 +178,7 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 {
 	ydpdict_priv_t *dict = NULL;
 	uint32_t index;
+	uint32_t magic;
 	uint16_t count;
 	int i, j;
 
@@ -185,6 +202,14 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 	dict->dat = fopen(dat, "r");
 
 	if (dict->dat == NULL)
+		goto failure;
+
+	/* Read and verify magic cookie */
+
+	if (fread(&magic, sizeof(magic), 1, dict->idx) != 1)
+		goto failure;
+
+	if (ydpdict_fix32(magic) != YDPDICT_IDX_MAGIC)
 		goto failure;
 
 	/* Read word count */
@@ -932,7 +957,7 @@ char *ydpdict_phonetic_to_utf8(const char *input)
 	int i, len = 0;
 	char *result;
 	
-	for (i = 0; input[i]; i++) {
+	for (i = 0; input[i] != 0; i++) {
 		if (((unsigned char*) input)[i] >= 128 && ((unsigned char*) input)[i] < 160)
 			len += strlen(ydpdict_phonetic_to_utf8_table[((unsigned char*) input)[i] - 128]);
 		else
@@ -987,6 +1012,52 @@ char *ydpdict_windows1250_to_utf8(const char *input)
 
 	for (i = 0; input[i]; i++) {
 		if (((unsigned char*) input)[i] >= 128)
+			strcat(result, ydpdict_windows1250_to_utf8_table[((unsigned char*) input)[i] - 128]);
+		else {
+			char tmp[2] = { input[i], 0 };
+
+			strcat(result, tmp);
+		}
+	}
+	
+	return result;
+}
+
+/**
+ * \brief Converts windows1250 string to UTF-8
+ *
+ * \note Codes 1..9 are converted to respective superscript digits and code
+ *       10 is converted to superscript 0.
+ *
+ * \param input input string
+ *
+ * \return allocated buffer with converted string on success, NULL on error
+ */
+char *ydpdict_windows1250_super_to_utf8(const char *input)
+{
+	int i, len = 0;
+	char *result;
+	
+	for (i = 0; input[i]; i++) {
+		if (((unsigned char*) input)[i] <= 10)
+			len += strlen(ydpdict_superscript_to_utf8_table[((unsigned char*) input)[i]]);
+		else if (((unsigned char*) input)[i] >= 128)
+			len += strlen(ydpdict_windows1250_to_utf8_table[((unsigned char*) input)[i] - 128]);
+		else
+			len++;
+	}
+
+	result = malloc(len + 1);
+
+	if (result == NULL)
+		return NULL;
+
+	result[0] = 0;
+
+	for (i = 0; input[i]; i++) {
+		if (((unsigned char*) input)[i] <= 10)
+			strcat(result, ydpdict_superscript_to_utf8_table[((unsigned char*) input)[i]]);
+		else if (((unsigned char*) input)[i] >= 128)
 			strcat(result, ydpdict_windows1250_to_utf8_table[((unsigned char*) input)[i] - 128]);
 		else {
 			char tmp[2] = { input[i], 0 };

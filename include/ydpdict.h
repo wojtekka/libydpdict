@@ -1,6 +1,6 @@
 /*
  *  ydpdict support library
- *  (C) Copyright 1998-2007 Wojtek Kaniewski <wojtekka@toxygen.net>
+ *  (C) Copyright 1998-2010 Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License Version
@@ -26,6 +26,17 @@
 #include <inttypes.h>
 
 /**
+ * Macro creating version identifier. Useful for comparison of current
+ * library version version expected.
+ */
+#define YDPDICT_MAKE_VERSION(major,minor,release) ((major) << 16 | (minor) << 8 | (release))
+
+/**
+ * Library version.
+ */
+#define YDPDICT_VERSION YDPDICT_MAKE_VERSION(1,0,3)
+
+/**
  * Output encoding type.
  */
 typedef enum {
@@ -49,8 +60,10 @@ int ydpdict_set_xhtml_style(ydpdict_t *dict, const char *style);
 int ydpdict_set_xhtml_use_style(ydpdict_t *dict, int use_style);
 int ydpdict_set_xhtml_title(ydpdict_t *dict, const char *title);
 int ydpdict_close(ydpdict_t *dict);
+
 char *ydpdict_phonetic_to_utf8(const char *input);
 char *ydpdict_windows1250_to_utf8(const char *input);
+char *ydpdict_windows1250_super_to_utf8(const char *input);
 
 #endif /* _YDPDICT_YDPDICT_H */
 
