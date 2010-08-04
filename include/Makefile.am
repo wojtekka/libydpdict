@@ -1,3 +1,5 @@
 libydpdict_includedir = $(includedir)/ydpdict
-libydpdict_include_HEADERS = ydpdict.h
+nodist_include_HEADERS = ydpdict.h
+
+EXTRA_DIST = ydpdict.h.in
 

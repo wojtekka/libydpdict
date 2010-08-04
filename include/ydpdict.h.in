@@ -22,9 +22,6 @@
 #ifndef _YDPDICT_YDPDICT_H
 #define _YDPDICT_YDPDICT_H
 
-#include <stdio.h>
-#include <inttypes.h>
-
 /**
  * Macro creating version identifier. Useful for comparison of current
  * library version version expected.
