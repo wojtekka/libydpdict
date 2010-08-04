@@ -1,1 +1,2 @@
 Czytanie pliku .idx za pomocą mmap().
+Użycie bsearch() w funkcji ydpdict_find_word(). Spróbuj znaleźć "the" -- powodzenia.
