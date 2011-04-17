@@ -2,6 +2,8 @@ libydpdict-1.0.3 (2010-xx-xx)
 
 - Dodanie funkcji ydpdict_windows1250_super_to_utf8().
 - Dodanie makr YDPDICT_VERSION i YDPDICT_MAKE_VERSION().
+- Uautomake'owienie programów testowych -- make check.
+- Wykrywanie libxml podczas konfiguracji dla ydpxml.
 
 libydpdict-1.0.2 (2009-10-10)
 
