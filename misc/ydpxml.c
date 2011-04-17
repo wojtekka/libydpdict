@@ -1,14 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ydpdict/ydpdict.h>
+#include <stdint.h>
+
+#ifdef HAVE_LIBXML2
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#endif
+
+#include "ydpdict.h"
 
 #define DICT_PATH "/usr/local/share/ydpdict"
 
 int parse_xml(const char *xml, int validate)
 {
+#ifdef HAVE_LIBXML2
 	xmlParserCtxtPtr ctxt;
 	xmlDocPtr doc;
 
@@ -31,6 +37,7 @@ int parse_xml(const char *xml, int validate)
 	}
 
 	xmlFreeParserCtxt(ctxt);
+#endif
 
 	return 1;
 }

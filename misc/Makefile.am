@@ -1,17 +1,19 @@
-EXTRA_DIST = gentable.c ydptest.c ydpstress.c ydpxml.c mkdict.py
-libydpdict = ../src/.libs/libydpdict.a
+check_PROGRAMS = ydpstress ydptest ydpxml gentable
+EXTRA_DIST = mkdict.py
 
-ydpstress:	ydpstress.c $(libydpdict)
-	$(CC) $(CFLAGS) $< -o $@ $(libydpdict)
+ydpstress_CFLAGS = -I$(top_builddir)/include
+ydpstress_LDADD = $(top_builddir)/src/libydpdict.la
+ydpstress_SOURCES = ydpstress.c
 
-ydptest:	ydptest.c $(libydpdict)
-	$(CC) $(CFLAGS) $< -o $@ $(libydpdict)
+ydptest_CFLAGS = -I$(top_builddir)/include
+ydptest_LDADD = $(top_builddir)/src/libydpdict.la
+ydptest_SOURCES = ydpstress.c
 
-ydpxml:	ydpxml.c $(libydpdict)
-	$(CC) $(shell pkg-config libxml-2.0 --cflags --libs) $(CFLAGS) $< -o $@ $(libydpdict)
+ydpxml_CFLAGS = -I$(top_builddir)/include $(LIBXML2_CFLAGS)
+ydpxml_LDADD = $(top_builddir)/src/libydpdict.la $(LIBXML2_LIBS)
+ydpxml_SOURCES = ydpxml.c
 
-gentable:	gentable.c
-	$(CC) $(CFLAGS) $< -o $@
+gentable_SOURCES = gentable.c
 
-clean:
-	rm -f gmon.out test.html ydpstress ydptest ydpxml *.o *~ core *.dat *.idx
+clean-local:
+	rm -f gmon.out test.html *.dat *.idx

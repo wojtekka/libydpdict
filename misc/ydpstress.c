@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ydpdict/ydpdict.h>
+#include <stdint.h>
+
+#include "ydpdict.h"
 
 #define DICT_PATH "/usr/local/share/ydpdict"
 
