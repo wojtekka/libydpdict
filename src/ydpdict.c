@@ -1038,8 +1038,8 @@ char *ydpdict_windows1250_super_to_utf8(const char *input)
 	int i, len = 0;
 	char *result;
 	
-	for (i = 0; input[i]; i++) {
-		if (((unsigned char*) input)[i] <= 10)
+	for (i = 0; input[i] != 0; i++) {
+		if (((unsigned char*) input)[i] < 10)
 			len += strlen(ydpdict_superscript_to_utf8_table[((unsigned char*) input)[i]]);
 		else if (((unsigned char*) input)[i] >= 128)
 			len += strlen(ydpdict_windows1250_to_utf8_table[((unsigned char*) input)[i] - 128]);
@@ -1055,7 +1055,7 @@ char *ydpdict_windows1250_super_to_utf8(const char *input)
 	result[0] = 0;
 
 	for (i = 0; input[i]; i++) {
-		if (((unsigned char*) input)[i] <= 10)
+		if (((unsigned char*) input)[i] < 10)
 			strcat(result, ydpdict_superscript_to_utf8_table[((unsigned char*) input)[i]]);
 		else if (((unsigned char*) input)[i] >= 128)
 			strcat(result, ydpdict_windows1250_to_utf8_table[((unsigned char*) input)[i] - 128]);
