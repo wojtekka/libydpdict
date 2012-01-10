@@ -194,12 +194,12 @@ ydpdict_t *ydpdict_open(const char *dat, const char *idx, ydpdict_encoding_t enc
 		
 	/* Open files */
 
-	dict->idx = fopen(idx, "r");
+	dict->idx = fopen(idx, "rb");
 
 	if (dict->idx == NULL)
 		goto failure;
 	
-	dict->dat = fopen(dat, "r");
+	dict->dat = fopen(dat, "rb");
 
 	if (dict->dat == NULL)
 		goto failure;
