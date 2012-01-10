@@ -1,6 +1,6 @@
 /*
  *  ydpdict support library
- *  (C) Copyright 1998-2010 Wojtek Kaniewski <wojtekka@toxygen.net>
+ *  (C) Copyright 1998-2012 Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License Version

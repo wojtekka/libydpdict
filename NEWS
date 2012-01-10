@@ -1,3 +1,7 @@
+libydpdict-1.0.4 (2012-01-10)
+
+- Poprawa działania pod Win32 (Marcin Nawrocki).
+
 libydpdict-1.0.3 (2011-05-10)
 
 - Dodanie funkcji ydpdict_windows1250_super_to_utf8().
