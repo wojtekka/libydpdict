@@ -1,9 +1,21 @@
-libydpdict 1.0.4
-(C) Copyright 1998-2012 Wojtek Kaniewski <wojtekka@toxygen.net>
+libydpdict
+==========
 
 Biblioteka ta służy do obsługi multimedialnych słowników angielsko-polskiego
 i polsko-angielskiego Collinsa, oraz niemiecko-polskiego i polsko-niemieckiego
 Langenscheidt, wydanych przez Young Digital Planet S.A.
+
+Bazy słownika najprawdopodobniej są przechowywane w mniej lub bardziej znanym
+formacie, ale ze względu na kiepską znajomość windowsowych silników baz danych,
+[rozgryzłem go samodzielnie](FILE-FORMAT.md).
+
+Jest używana głównie przez [ydpdict](https://github.com/wojtekka/ydpdict), ale 
+korzysta z niej również [ydpdict-anki](https://github.com/porridge/ydpdict-anki).
+
+Licencja
+--------
+
+(C) Copyright 1998-2012 Wojtek Kaniewski <wojtekka@toxygen.net>
 
 Biblioteka jest udostępniona na licencji GNU LGPL.
 
