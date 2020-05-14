@@ -7,7 +7,7 @@ ydpstress_SOURCES = ydpstress.c
 
 ydptest_CFLAGS = -I$(top_builddir)/include
 ydptest_LDADD = $(top_builddir)/src/libydpdict.la
-ydptest_SOURCES = ydpstress.c
+ydptest_SOURCES = ydptest.c
 
 ydpxml_CFLAGS = -I$(top_builddir)/include $(LIBXML2_CFLAGS)
 ydpxml_LDADD = $(top_builddir)/src/libydpdict.la $(LIBXML2_LIBS)
