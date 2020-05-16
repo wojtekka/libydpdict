@@ -1,3 +1,5 @@
+/* This example and/or test program is released under the terms of CC0 license. */
+
 #include <stdio.h>
 #include <stdlib.h>
 
